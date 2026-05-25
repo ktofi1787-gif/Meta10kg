@@ -2,24 +2,24 @@ import { useState, useRef, useEffect } from "react";
 
 // ─── PALETA DE COLORES PREMIUM (DARK THEME) ─────────────────────────────────
 const theme = {
-  bg: "#0B0F19", // Azul muy oscuro (Casi negro)
-  card: "rgba(30, 41, 59, 0.4)", // Translúcido para Glassmorphism
+  bg: "#0B0F19",
+  card: "rgba(30, 41, 59, 0.4)",
   border: "rgba(255, 255, 255, 0.08)",
   text: "#F8FAFC",
   textMuted: "#94A3B8",
-  accent: "#3B82F6", // Azul Tech
-  energy: "#F97316", // Naranja (Calorías)
-  protein: "#EF4444", // Rojo
-  carbs: "#F59E0B", // Ámbar
-  fat: "#8B5CF6", // Morado
-  water: "#06B6D4", // Cyan
-  success: "#10B981" // Verde Progreso
+  accent: "#3B82F6",
+  energy: "#F97316",
+  protein: "#EF4444",
+  carbs: "#F59E0B",
+  fat: "#8B5CF6",
+  water: "#06B6D4",
+  success: "#10B981"
 };
 
 // ─── CONFIGURACIÓN GLOBAL ───────────────────────────────────────────────────
 const NAV_ITEMS = [
   { id: "inicio", icon: "🏠", label: "Inicio" },
-  { id: "nutricion", icon: "🔥", label: "Macros" },
+  { id: "estadisticas", icon: "📊", label: "Stats" },
   { id: "add", icon: "📷", label: "", isCenter: true },
   { id: "ejercicios", icon: "🏋️", label: "Rutina" },
   { id: "progreso", icon: "📈", label: "Evolución" },
@@ -52,9 +52,17 @@ async function analyzeImageWithGemini(base64Image, mimeType) {
         body: JSON.stringify({
           contents: [{ parts: [
             { inline_data: { mime_type: mimeType, data: base64Image } },
-            { text: `Analiza esta comida. Responde SOLO en JSON con números (sin 'g' ni texto):
-{ "nombre": "Plato", "calorias": 0, "proteinas": 0, "carbohidratos": 0, "grasas": 0, "emoji": "🍽️" }
-Si no hay comida: {"error": "Sin comida"}` }
+            { text: `Analiza detalladamente esta comida. Responde SOLO en JSON con esta estructura exacta (los valores nutricionales deben ser números sin letras):
+{ 
+  "nombre": "Nombre detallado del plato (ej. Arroz con Pollo Asado)", 
+  "ingredientes": "Lista breve de los ingredientes detectados",
+  "calorias": 0, 
+  "proteinas": 0, 
+  "carbohidratos": 0, 
+  "grasas": 0, 
+  "emoji": "🍽️" 
+}
+Si no hay comida: {"error": "No se detectó comida en la imagen"}` }
           ]}],
           generationConfig: { temperature: 0.1 }
         })
@@ -71,16 +79,7 @@ Si no hay comida: {"error": "Sin comida"}` }
 
 // ─── COMPONENTES UI PREMIUM ─────────────────────────────────────────────────
 const GlassCard = ({ children, style, onClick }) => (
-  <div onClick={onClick} style={{
-    background: theme.card,
-    backdropFilter: "blur(16px)",
-    WebkitBackdropFilter: "blur(16px)",
-    borderRadius: "24px",
-    border: `1px solid ${theme.border}`,
-    padding: "20px",
-    boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
-    ...style
-  }}>
+  <div onClick={onClick} style={{ background: theme.card, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderRadius: "24px", border: `1px solid ${theme.border}`, padding: "20px", boxShadow: "0 8px 32px rgba(0,0,0,0.2)", ...style }}>
     {children}
   </div>
 );
@@ -120,29 +119,30 @@ function PremiumMacroBar({ label, pct, color, amount }) {
 
 function MealCardPremium({ meal, onDelete }) {
   return (
-    <GlassCard style={{ padding: "12px", marginBottom: "12px", display: "flex", alignItems: "center", gap: "16px", transition: "transform 0.2s", cursor: "pointer" }} >
+    <GlassCard style={{ padding: "12px", marginBottom: "12px", display: "flex", alignItems: "center", gap: "16px" }} >
       <div style={{ width: 64, height: 64, borderRadius: "18px", overflow: "hidden", flexShrink: 0, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, boxShadow: "inset 0 0 10px rgba(0,0,0,0.5)" }}>
         {meal.imageUrl ? <img src={meal.imageUrl} alt={meal.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : meal.emoji}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <h4 style={{ fontSize: 15, fontWeight: 800, color: theme.text, margin: "0 0 4px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meal.name}</h4>
+        <h4 style={{ fontSize: 15, fontWeight: 800, color: theme.text, margin: "0 0 2px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meal.name}</h4>
+        {meal.ingredientes && <p style={{ fontSize: 10, color: theme.textMuted, margin: "0 0 6px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meal.ingredientes}</p>}
         <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "6px" }}>
-          <span style={{ fontSize: 12, color: theme.textMuted }}>{meal.time}</span>
-          <span style={{ fontSize: 12, background: `${theme.energy}20`, color: theme.energy, borderRadius: "8px", padding: "2px 8px", fontWeight: 800 }}>{meal.kcal} kcal</span>
+          <span style={{ fontSize: 11, background: `${theme.energy}20`, color: theme.energy, borderRadius: "6px", padding: "2px 6px", fontWeight: 800 }}>{meal.kcal} kcal</span>
+          <span style={{ fontSize: 11, color: theme.textMuted }}>{meal.time}</span>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
-          <span style={{ fontSize: 11, color: theme.protein, fontWeight: 700 }}>{meal.p}g P</span>
-          <span style={{ fontSize: 11, color: theme.carbs, fontWeight: 700 }}>{meal.c}g C</span>
-          <span style={{ fontSize: 11, color: theme.fat, fontWeight: 700 }}>{meal.g}g G</span>
+          <span style={{ fontSize: 10, color: theme.protein, fontWeight: 700 }}>{meal.p}g P</span>
+          <span style={{ fontSize: 10, color: theme.carbs, fontWeight: 700 }}>{meal.c}g C</span>
+          <span style={{ fontSize: 10, color: theme.fat, fontWeight: 700 }}>{meal.g}g G</span>
         </div>
       </div>
-      <button onClick={(e) => { e.stopPropagation(); onDelete(meal.id); }} style={{ background: "none", border: "none", width: 32, height: 32, borderRadius: 16, background: "rgba(239, 68, 68, 0.1)", color: theme.protein, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+      <button onClick={() => onDelete(meal.id)} style={{ background: "none", border: "none", width: 32, height: 32, borderRadius: 16, background: "rgba(239, 68, 68, 0.1)", color: theme.protein, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
     </GlassCard>
   );
 }
 
 // ─── PANTALLA 1: DASHBOARD (INICIO) ─────────────────────────────────────────
-function InicioScreen({ meals, setMeals, water, setWater, targetKcal, selectedDate, setSelectedDate, openReminders }) {
+function InicioScreen({ meals, setMeals, water, setWater, targetKcal, selectedDate, setSelectedDate, openProfile, avatar }) {
   const weekDays = generarSemana();
   const dayMeals = meals.filter(m => m.date === selectedDate);
   const totalKcal = dayMeals.reduce((a, m) => a + m.kcal, 0);
@@ -153,20 +153,20 @@ function InicioScreen({ meals, setMeals, water, setWater, targetKcal, selectedDa
 
   const handleQuickAdd = () => {
     const input = window.prompt("Ingresa calorías rápidas:");
-    if (input && !isNaN(input)) {
-      setMeals(prev => [{ id: Date.now(), date: selectedDate, name: "Carga Rápida", time: new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }), kcal: Number(input), p: 0, c: 0, g: 0, emoji: "⚡" }, ...prev]);
-    }
+    if (input && !isNaN(input)) setMeals(prev => [{ id: Date.now(), date: selectedDate, name: "Carga Rápida", ingredientes: "Manual", time: new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }), kcal: Number(input), p: 0, c: 0, g: 0, emoji: "⚡" }, ...prev]);
   };
 
   return (
     <div style={{ paddingBottom: 100 }}>
-      {/* Header Premium */}
+      {/* Header Premium con Avatar */}
       <div style={{ padding: "40px 24px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <h1 style={{ fontSize: 28, fontWeight: 900, color: theme.text, margin: 0, background: `linear-gradient(to right, ${theme.text}, ${theme.textMuted})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Meta 10kg</h1>
           <p style={{ fontSize: 14, color: theme.textMuted, margin: "4px 0 0 0", fontWeight: 500 }}>Tu evolución inteligente</p>
         </div>
-        <button onClick={openReminders} style={{ width: 44, height: 44, borderRadius: "14px", background: theme.card, border: `1px solid ${theme.border}`, fontSize: 20, cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>🔔</button>
+        <button onClick={openProfile} style={{ width: 48, height: 48, borderRadius: "24px", background: theme.card, border: `2px solid ${theme.accent}`, overflow: "hidden", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 15px ${theme.accent}40` }}>
+          {avatar ? <img src={avatar} alt="Perfil" style={{width: "100%", height: "100%", objectFit: "cover"}} /> : <span style={{fontSize: 24}}>👤</span>}
+        </button>
       </div>
 
       {/* Calendario Píldoras */}
@@ -227,38 +227,67 @@ function InicioScreen({ meals, setMeals, water, setWater, targetKcal, selectedDa
   );
 }
 
-// ─── PANTALLA 2: NUTRICIÓN Y PERFIL ─────────────────────────────────────────
-function NutricionScreen({ profile, setProfile }) {
+// ─── MODAL DE PERFIL SUPERIOR (IMC Y DATOS) ─────────────────────────────────
+function ProfileModal({ onClose, profile, setProfile, avatar, setAvatar }) {
   const handleChange = (e) => setProfile({ ...profile, [e.target.name]: e.target.value });
-  const tmb = (10 * (parseFloat(profile.weight)||0)) + (6.25 * (parseFloat(profile.height)||0)) - (5 * (parseFloat(profile.age)||0)) + (profile.gender === 'M' ? 5 : -161);
-  const targetKcal = Math.round(tmb * parseFloat(profile.activity)) + (profile.goal === 'lose' ? -500 : profile.goal === 'gain' ? 500 : 0);
+  const InputStyle = { width: "100%", padding: "12px", borderRadius: "10px", background: "rgba(0,0,0,0.3)", border: `1px solid ${theme.border}`, color: theme.text, fontSize: 14, marginTop: 4, outline: "none", colorScheme: "dark" };
+  const fileInputRef = useRef(null);
 
-  const InputStyle = { width: "100%", padding: "14px", borderRadius: "12px", background: "rgba(0,0,0,0.3)", border: `1px solid ${theme.border}`, color: theme.text, fontSize: 14, marginTop: 6, outline: "none", boxSizing: "border-box" };
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) setAvatar(URL.createObjectURL(file));
+  };
+
+  // Cálculo IMC
+  const peso = parseFloat(profile.weight) || 0;
+  const alturaMts = (parseFloat(profile.height) || 1) / 100;
+  const imc = (peso / (alturaMts * alturaMts)).toFixed(1);
+  let imcStatus = "Normal"; let imcColor = theme.success;
+  if (imc < 18.5) { imcStatus = "Bajo peso"; imcColor = theme.water; }
+  else if (imc >= 25 && imc < 30) { imcStatus = "Sobrepeso"; imcColor = theme.carbs; }
+  else if (imc >= 30) { imcStatus = "Obesidad"; imcColor = theme.protein; }
 
   return (
-    <div style={{ padding: "40px 24px 100px" }}>
-      <h2 style={{ fontSize: 28, fontWeight: 900, color: theme.text, marginBottom: 24 }}>Perfil Metabólico</h2>
-      
-      <div style={{ background: `linear-gradient(135deg, ${theme.accent}, ${theme.fat})`, borderRadius: "24px", padding: "30px 20px", color: "white", textAlign: "center", marginBottom: 32, boxShadow: `0 12px 24px ${theme.accent}40` }}>
-        <p style={{ fontSize: 14, fontWeight: 600, opacity: 0.9, margin: "0 0 8px 0" }}>Calorías Diarias Objetivo</p>
-        <div style={{ fontSize: 48, fontWeight: 900, lineHeight: 1 }}>{targetKcal} <span style={{ fontSize: 16, fontWeight: 600, opacity: 0.8 }}>kcal</span></div>
-      </div>
-
-      <GlassCard>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-          <div><label style={{ fontSize: 12, fontWeight: 700, color: theme.textMuted }}>Peso (kg)</label><input type="number" name="weight" value={profile.weight} onChange={handleChange} style={InputStyle} /></div>
-          <div><label style={{ fontSize: 12, fontWeight: 700, color: theme.textMuted }}>Altura (cm)</label><input type="number" name="height" value={profile.height} onChange={handleChange} style={InputStyle} /></div>
-          <div><label style={{ fontSize: 12, fontWeight: 700, color: theme.textMuted }}>Edad</label><input type="number" name="age" value={profile.age} onChange={handleChange} style={InputStyle} /></div>
-          <div><label style={{ fontSize: 12, fontWeight: 700, color: theme.textMuted }}>Sexo</label><select name="gender" value={profile.gender} onChange={handleChange} style={{...InputStyle, appearance: "none"}}><option value="M">Hombre</option><option value="F">Mujer</option></select></div>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <GlassCard style={{ width: "90%", maxWidth: 380, maxHeight: "85vh", overflowY: "auto", padding: "30px 20px" }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: -20 }}>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: theme.textMuted, fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
-        <div style={{ marginBottom: "16px" }}><label style={{ fontSize: 12, fontWeight: 700, color: theme.textMuted }}>Actividad Física</label><select name="activity" value={profile.activity} onChange={handleChange} style={{...InputStyle, appearance: "none"}}><option value="1.2">Sedentario</option><option value="1.375">Ligero (1-3 días)</option><option value="1.55">Moderado (3-5 días)</option><option value="1.725">Fuerte (6-7 días)</option></select></div>
-        <div><label style={{ fontSize: 12, fontWeight: 700, color: theme.textMuted }}>Objetivo Visual</label><select name="goal" value={profile.goal} onChange={handleChange} style={{...InputStyle, appearance: "none"}}><option value="lose">Déficit (Perder Grasa)</option><option value="maintain">Mantenimiento</option><option value="gain">Superávit (Ganar Músculo)</option></select></div>
+        
+        {/* Foto de Perfil Central */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 24 }}>
+          <div onClick={() => fileInputRef.current.click()} style={{ width: 90, height: 90, borderRadius: "45px", background: theme.card, border: `2px solid ${theme.accent}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: "pointer", position: "relative", boxShadow: `0 0 20px ${theme.accent}40` }}>
+            {avatar ? <img src={avatar} alt="Avatar" style={{width: "100%", height: "100%", objectFit: "cover"}} /> : <span style={{fontSize: 40}}>📷</span>}
+            <div style={{ position: "absolute", bottom: 0, width: "100%", background: "rgba(0,0,0,0.6)", fontSize: 10, textAlign: "center", padding: "2px 0", color: "white", fontWeight: "bold" }}>EDITAR</div>
+          </div>
+          <input type="file" accept="image/*" ref={fileInputRef} style={{ display: "none" }} onChange={handleAvatarChange} />
+          <h3 style={{ fontSize: 20, fontWeight: 900, color: theme.text, margin: "12px 0 4px" }}>Tu Perfil</h3>
+        </div>
+
+        {/* Analítica IMC */}
+        <div style={{ background: `linear-gradient(135deg, ${imcColor}20, transparent)`, border: `1px solid ${imcColor}40`, borderRadius: "16px", padding: "16px", textAlign: "center", marginBottom: 24 }}>
+          <span style={{ fontSize: 12, color: theme.textMuted, fontWeight: 700 }}>Índice de Masa Corporal (IMC)</span>
+          <div style={{ fontSize: 32, fontWeight: 900, color: imcColor, margin: "4px 0" }}>{imc}</div>
+          <span style={{ fontSize: 12, fontWeight: 800, background: imcColor, color: "#fff", padding: "4px 10px", borderRadius: "8px" }}>{imcStatus}</span>
+        </div>
+
+        {/* Datos Biométricos */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+          <div><label style={{ fontSize: 11, fontWeight: 700, color: theme.textMuted }}>Peso (kg)</label><input type="number" name="weight" value={profile.weight} onChange={handleChange} style={InputStyle} /></div>
+          <div><label style={{ fontSize: 11, fontWeight: 700, color: theme.textMuted }}>Altura (cm)</label><input type="number" name="height" value={profile.height} onChange={handleChange} style={InputStyle} /></div>
+          <div><label style={{ fontSize: 11, fontWeight: 700, color: theme.textMuted }}>Edad</label><input type="number" name="age" value={profile.age} onChange={handleChange} style={InputStyle} /></div>
+          <div><label style={{ fontSize: 11, fontWeight: 700, color: theme.textMuted }}>Sexo</label><select name="gender" value={profile.gender} onChange={handleChange} style={{...InputStyle, appearance: "none"}}><option value="M">Hombre</option><option value="F">Mujer</option></select></div>
+        </div>
+        <div style={{ marginBottom: "12px" }}><label style={{ fontSize: 11, fontWeight: 700, color: theme.textMuted }}>Nivel de Actividad</label><select name="activity" value={profile.activity} onChange={handleChange} style={{...InputStyle, appearance: "none"}}><option value="1.2">Sedentario</option><option value="1.375">Ligero</option><option value="1.55">Moderado</option><option value="1.725">Fuerte</option></select></div>
+        <div style={{ marginBottom: "20px" }}><label style={{ fontSize: 11, fontWeight: 700, color: theme.textMuted }}>Objetivo Nutricional</label><select name="goal" value={profile.goal} onChange={handleChange} style={{...InputStyle, appearance: "none"}}><option value="lose">Déficit (Bajar)</option><option value="maintain">Mantenimiento</option><option value="gain">Superávit (Subir)</option></select></div>
+        
+        <button onClick={onClose} style={{ width: "100%", padding: "16px", background: theme.accent, border: "none", borderRadius: "12px", color: "white", fontWeight: 800, cursor: "pointer", fontSize: 16 }}>Guardar Perfil</button>
       </GlassCard>
     </div>
   );
 }
 
-// ─── PANTALLA 3: PROGRESO Y PESO ────────────────────────────────────────────
+// ─── OTRAS PANTALLAS ────────────────────────────────────────────────────────
 function ProgresoScreen({ weightLogs, setWeightLogs, profile, setProfile }) {
   const currentWeight = weightLogs.length > 0 ? weightLogs[0].weight : profile.weight;
   const lost = (profile.initialWeight || 85) - currentWeight;
@@ -274,7 +303,6 @@ function ProgresoScreen({ weightLogs, setWeightLogs, profile, setProfile }) {
   return (
     <div style={{ padding: "40px 24px 100px" }}>
       <h2 style={{ fontSize: 28, fontWeight: 900, color: theme.text, marginBottom: 24 }}>Tu Evolución</h2>
-      
       <div style={{ display: "flex", gap: "16px", marginBottom: "24px" }}>
         <GlassCard style={{ flex: 1, textAlign: "center", padding: "24px 16px" }}>
           <span style={{ fontSize: 12, color: theme.textMuted, fontWeight: 700, display: "block", marginBottom: 8 }}>Peso Actual</span>
@@ -285,9 +313,7 @@ function ProgresoScreen({ weightLogs, setWeightLogs, profile, setProfile }) {
           <span style={{ fontSize: 28, fontWeight: 900, color: theme.success }}>-{Math.max(0, lost).toFixed(1)}<span style={{fontSize: 14}}>kg</span></span>
         </GlassCard>
       </div>
-
       <button onClick={handleAddWeight} style={{ width: "100%", padding: "18px", background: `linear-gradient(135deg, ${theme.success}, #059669)`, border: "none", borderRadius: "16px", color: "white", fontSize: 16, fontWeight: 800, cursor: "pointer", marginBottom: 32, boxShadow: `0 8px 24px ${theme.success}40` }}>⚖️ Registrar peso de hoy</button>
-
       <h3 style={{ fontSize: 18, fontWeight: 800, color: theme.text, marginBottom: 16 }}>Historial Analítico</h3>
       <GlassCard style={{ padding: "8px 20px" }}>
         {weightLogs.map((log, i) => (
@@ -301,19 +327,8 @@ function ProgresoScreen({ weightLogs, setWeightLogs, profile, setProfile }) {
   );
 }
 
-// ─── PANTALLA 4: RUTINAS (CONSTRUCCIÓN VISUAL) ──────────────────────────────
-function EjerciciosScreen() { 
-  return (
-    <div style={{ padding: "40px 24px 100px" }}>
-      <h2 style={{ fontSize: 28, fontWeight: 900, color: theme.text, marginBottom: 24 }}>Gym & Rutinas</h2>
-      <GlassCard style={{ textAlign: "center", padding: "40px 20px" }}>
-        <div style={{ fontSize: 64, marginBottom: 16 }}>🚧</div>
-        <h3 style={{ color: theme.text, fontSize: 18, fontWeight: 800 }}>Sección en Construcción</h3>
-        <p style={{ color: theme.textMuted, fontSize: 14 }}>Pronto podrás trackear tus pesos muertos y sentadillas aquí.</p>
-      </GlassCard>
-    </div>
-  ); 
-}
+function StatsScreen() { return <div style={{ padding: "40px 24px" }}><h2 style={{ fontSize: 28, fontWeight: 900, color: theme.text }}>Estadísticas</h2><p style={{color: theme.textMuted}}>Gráficos de macronutrientes en construcción.</p></div>; }
+function EjerciciosScreen() { return <div style={{ padding: "40px 24px" }}><h2 style={{ fontSize: 28, fontWeight: 900, color: theme.text }}>Rutinas</h2><p style={{color: theme.textMuted}}>Trackeo de gimnasio en construcción.</p></div>; }
 
 // ─── MODAL DE IA FOTOGRÁFICO PREMIUM ────────────────────────────────────────
 function PhotoAnalysisModal({ onClose, onAdd, targetDate }) {
@@ -332,7 +347,7 @@ function PhotoAnalysisModal({ onClose, onAdd, targetDate }) {
   };
 
   const handleAdd = () => {
-    onAdd({ id: Date.now(), date: targetDate, name: result.nombre, time: new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }), kcal: Number(result.calorias)||0, p: Number(result.proteinas)||0, c: Number(result.carbohidratos)||0, g: Number(result.grasas)||0, emoji: result.emoji || "🍽️", imageUrl });
+    onAdd({ id: Date.now(), date: targetDate, name: result.nombre, ingredientes: result.ingredientes, time: new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" }), kcal: Number(result.calorias)||0, p: Number(result.proteinas)||0, c: Number(result.carbohidratos)||0, g: Number(result.grasas)||0, emoji: result.emoji || "🍽️", imageUrl });
     onClose();
   };
 
@@ -345,7 +360,7 @@ function PhotoAnalysisModal({ onClose, onAdd, targetDate }) {
         {stage === "select" && (
           <>
             <h3 style={{ fontSize: 22, fontWeight: 900, color: theme.text, marginBottom: 8, textAlign: "center" }}>Escanear Plato</h3>
-            <p style={{ fontSize: 14, color: theme.textMuted, marginBottom: 32, textAlign: "center" }}>La IA identificará los macros exactos.</p>
+            <p style={{ fontSize: 14, color: theme.textMuted, marginBottom: 32, textAlign: "center" }}>La IA identificará los macros e ingredientes.</p>
             <div style={{ display: "flex", gap: "12px" }}>
               <button onClick={() => cameraRef.current.click()} style={{ flex: 1, padding: "20px", borderRadius: "20px", border: "none", background: `linear-gradient(135deg, ${theme.accent}, ${theme.water})`, color: "white", fontSize: 16, fontWeight: 800, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}><span style={{fontSize: 28}}>📷</span> Cámara</button>
               <button onClick={() => galleryRef.current.click()} style={{ flex: 1, padding: "20px", borderRadius: "20px", border: `1px solid ${theme.border}`, background: theme.card, color: theme.text, fontSize: 16, fontWeight: 800, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}><span style={{fontSize: 28}}>🖼️</span> Galería</button>
@@ -360,13 +375,14 @@ function PhotoAnalysisModal({ onClose, onAdd, targetDate }) {
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "4px", background: theme.water, boxShadow: `0 0 15px ${theme.water}`, animation: "scan 2s infinite ease-in-out" }} />
               <style>{`@keyframes scan { 0% { top: 0 } 50% { top: 100% } 100% { top: 0 } }`}</style>
             </div>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: theme.text, animation: "pulse 1.5s infinite" }}>Analizando con Gemini AI...</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: theme.text, animation: "pulse 1.5s infinite" }}>Analizando con IA...</h3>
           </div>
         )}
 
         {stage === "result" && result && (
            <div style={{ textAlign: "center" }}>
-             <h3 style={{ fontSize: 20, fontWeight: 800, color: theme.text, marginBottom: 8 }}>{result.nombre}</h3>
+             <h3 style={{ fontSize: 20, fontWeight: 800, color: theme.text, marginBottom: 4 }}>{result.nombre}</h3>
+             <p style={{ fontSize: 12, color: theme.textMuted, margin: "0 0 8px", fontStyle: "italic" }}>{result.ingredientes}</p>
              <div style={{ fontSize: 48, fontWeight: 900, color: theme.energy, margin: "16px 0", textShadow: `0 0 20px ${theme.energy}40` }}>{result.calorias} <span style={{fontSize:16, color: theme.textMuted}}>kcal</span></div>
              <div style={{ display: "flex", justifyContent: "space-between", background: theme.card, padding: "16px", borderRadius: "16px", marginBottom: "24px" }}>
                <div><span style={{display:"block", color:theme.protein, fontWeight:900, fontSize:18}}>{result.proteinas}g</span><span style={{fontSize:11, color:theme.textMuted}}>Proteínas</span></div>
@@ -381,57 +397,34 @@ function PhotoAnalysisModal({ onClose, onAdd, targetDate }) {
   );
 }
 
-// ─── MODAL RECORDATORIOS ────────────────────────────────────────────────────
-function RemindersModal({ onClose, reminders, setReminders }) {
-  const handleChange = (e) => setReminders({ ...reminders, [e.target.name]: e.target.value });
-  const InputStyle = { width: "100%", padding: "12px", borderRadius: "10px", background: "rgba(0,0,0,0.3)", border: `1px solid ${theme.border}`, color: theme.text, outline: "none", colorScheme: "dark" };
-
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <GlassCard style={{ width: "90%", maxWidth: 360 }} onClick={e => e.stopPropagation()}>
-        <h3 style={{ fontSize: 20, fontWeight: 800, color: theme.text, marginBottom: 20 }}>⏰ Notificaciones</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: 24 }}>
-          <div><label style={{ fontSize: 11, fontWeight: 700, color: theme.textMuted }}>Desayuno</label><input type="time" name="desayuno" value={reminders.desayuno} onChange={handleChange} style={InputStyle} /></div>
-          <div><label style={{ fontSize: 11, fontWeight: 700, color: theme.textMuted }}>Almuerzo</label><input type="time" name="almuerzo" value={reminders.almuerzo} onChange={handleChange} style={InputStyle} /></div>
-          <div><label style={{ fontSize: 11, fontWeight: 700, color: theme.textMuted }}>Snack</label><input type="time" name="once" value={reminders.once} onChange={handleChange} style={InputStyle} /></div>
-          <div><label style={{ fontSize: 11, fontWeight: 700, color: theme.textMuted }}>Cena</label><input type="time" name="cena" value={reminders.cena} onChange={handleChange} style={InputStyle} /></div>
-        </div>
-        <button onClick={() => setReminders({...reminders, active: !reminders.active})} style={{ width: "100%", padding: "14px", background: reminders.active ? theme.card : theme.accent, border: `1px solid ${reminders.active ? theme.border : 'transparent'}`, borderRadius: "12px", color: theme.text, fontWeight: 800, cursor: "pointer" }}>
-          {reminders.active ? "Desactivar Alarmas" : "Activar Alarmas"}
-        </button>
-      </GlassCard>
-    </div>
-  );
-}
-
 // ─── APLICACIÓN PRINCIPAL ───────────────────────────────────────────────────
 export default function App() {
   const [activeTab, setActiveTab] = useState("inicio");
   const [showModal, setShowModal] = useState(false);
-  const [showReminders, setShowReminders] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [selectedDate, setSelectedDate] = useState(getHoyStr());
   
+  const [avatar, setAvatar] = useState(() => localStorage.getItem("m10_avatar") || null);
   const [meals, setMeals] = useState(() => JSON.parse(localStorage.getItem("m10_meals")) || []);
   const [water, setWater] = useState(() => Number(localStorage.getItem("m10_water")) || 0);
   const [profile, setProfile] = useState(() => JSON.parse(localStorage.getItem("m10_profile")) || { weight: 85, initialWeight: 85, height: 175, age: 20, gender: 'M', activity: 1.2, goal: 'lose' });
   const [weightLogs, setWeightLogs] = useState(() => JSON.parse(localStorage.getItem("m10_weights")) || [{ date: getHoyStr(), weight: 85 }]);
-  const [reminders, setReminders] = useState(() => JSON.parse(localStorage.getItem("m10_reminders")) || { desayuno: "08:00", almuerzo: "13:30", once: "18:00", cena: "21:00", active: false });
 
   const targetKcal = Math.round(((10 * profile.weight) + (6.25 * profile.height) - (5 * profile.age) + (profile.gender === 'M' ? 5 : -161)) * parseFloat(profile.activity)) + (profile.goal === 'lose' ? -500 : profile.goal === 'gain' ? 500 : 0);
 
+  useEffect(() => { localStorage.setItem("m10_avatar", avatar); }, [avatar]);
   useEffect(() => { localStorage.setItem("m10_meals", JSON.stringify(meals)); }, [meals]);
   useEffect(() => { localStorage.setItem("m10_water", water.toString()); }, [water]);
   useEffect(() => { localStorage.setItem("m10_profile", JSON.stringify(profile)); }, [profile]);
   useEffect(() => { localStorage.setItem("m10_weights", JSON.stringify(weightLogs)); }, [weightLogs]);
-  useEffect(() => { localStorage.setItem("m10_reminders", JSON.stringify(reminders)); }, [reminders]);
 
   return (
     <div style={{ background: theme.bg, minHeight: "100vh", width: "100%", maxWidth: 430, margin: "0 auto", position: "relative", fontFamily: "system-ui, -apple-system, sans-serif", overflowX: "hidden" }}>
       {showModal && <PhotoAnalysisModal onClose={() => setShowModal(false)} onAdd={(m) => setMeals([m, ...meals])} targetDate={selectedDate} />}
-      {showReminders && <RemindersModal onClose={() => setShowReminders(false)} reminders={reminders} setReminders={setReminders} />}
+      {showProfile && <ProfileModal onClose={() => setShowProfile(false)} profile={profile} setProfile={setProfile} avatar={avatar} setAvatar={setAvatar} />}
       
-      {activeTab === "inicio" && <InicioScreen meals={meals} setMeals={setMeals} openScanner={() => setShowModal(true)} water={water} setWater={setWater} targetKcal={targetKcal} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openReminders={() => setShowReminders(true)} />}
-      {activeTab === "nutricion" && <NutricionScreen profile={profile} setProfile={setProfile} />}
+      {activeTab === "inicio" && <InicioScreen meals={meals} setMeals={setMeals} openScanner={() => setShowModal(true)} water={water} setWater={setWater} targetKcal={targetKcal} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openProfile={() => setShowProfile(true)} avatar={avatar} />}
+      {activeTab === "estadisticas" && <StatsScreen />}
       {activeTab === "ejercicios" && <EjerciciosScreen />}
       {activeTab === "progreso" && <ProgresoScreen weightLogs={weightLogs} setWeightLogs={setWeightLogs} profile={profile} setProfile={setProfile} />}
 
@@ -440,9 +433,7 @@ export default function App() {
         {NAV_ITEMS.map((item) => {
           if (item.isCenter) return (
             <div key={item.id} style={{ position: "relative", top: -24 }}>
-              <button onClick={() => { setSelectedDate(getHoyStr()); setShowModal(true); }} style={{ width: 64, height: 64, borderRadius: 32, background: `linear-gradient(135deg, ${theme.accent}, ${theme.water})`, border: "none", color: "white", fontSize: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: `0 8px 24px ${theme.accent}60`, transition: "transform 0.2s" }}>
-                {item.icon}
-              </button>
+              <button onClick={() => { setSelectedDate(getHoyStr()); setShowModal(true); }} style={{ width: 64, height: 64, borderRadius: 32, background: `linear-gradient(135deg, ${theme.accent}, ${theme.water})`, border: "none", color: "white", fontSize: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: `0 8px 24px ${theme.accent}60`, transition: "transform 0.2s" }}>{item.icon}</button>
             </div>
           );
           const isActive = activeTab === item.id;
