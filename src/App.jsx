@@ -29,27 +29,28 @@ const PROGRESS_DATA = [
   { week: "S6", weight: 81.4 },
 ];
 
-// ─── GEMINI ANALYSIS ────────────────────────────────────────────────────────
+// Asegúrate de que esta línea esté al inicio de tu archivo App.jsx junto a los otros imports:
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// Reemplaza la función antigua por esta nueva:
 async function analyzeImageWithGemini(base64Image, mimeType) {
   if (!GEMINI_API_KEY) {
     throw new Error("Falta configurar la API Key de Gemini.");
   }
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            {
-              inline_data: {
-                mime_type: mimeType,
-                data: base64Image,
-              },
-            },
-            {
-              text: `Analiza esta foto de comida y responde SOLO en este formato JSON exacto, sin texto adicional:
+  
+  // Inicializamos el conector oficial de Google
+  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+  // Estructuramos la foto en el formato nativo que pide la API
+  const imagePart = {
+    inlineData: {
+      data: base64Image,
+      mimeType: mimeType
+    },
+  };
+
+  const prompt = `Analiza esta foto de comida y responde SOLO en este formato JSON exacto, sin texto adicional ni bloques de código markdown:
 {
   "nombre": "nombre del plato en español",
   "calorias": número estimado de calorías,
@@ -58,18 +59,16 @@ async function analyzeImageWithGemini(base64Image, mimeType) {
   "grasas": gramos de grasas,
   "emoji": emoji representativo del plato
 }
-Si no hay comida en la imagen, responde: {"error": "No se detectó comida en la imagen"}`
-            }
-          ]
-        }],
-        generationConfig: { temperature: 0.1 }
-      }),
-    }
-  );
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  const clean = text.replace(/```json|```/g, "").trim();
-  return JSON.parse(clean);
+Si no hay comida en la imagen, responde: {"error": "No se detectó comida en la imagen"}`;
+
+  const result = await model.generateContent([prompt, imagePart]);
+  const response = await result.response;
+  let text = response.text();
+  
+  // Limpiamos el texto por si la IA devuelve etiquetas extras
+  text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+  
+  return JSON.parse(text);
 }
 
 // ─── COMPONENTS ─────────────────────────────────────────────────────────────
